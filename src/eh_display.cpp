@@ -41,10 +41,23 @@ void PrintValue(Adafruit_SSD1306* display, int row, String title, float value) {
   display->display();
 }
 
-void PrintValue(Adafruit_SSD1306* display, int row, String title,
-                String value) {
+void PrintValue(Adafruit_SSD1306* display, int row, String title, String value) {
   ClearRow(display, row);
   display->setCursor(0, 8 * row);
   display->printf("%s: %s", title.c_str(), value.c_str());
+  display->display();
+}
+
+void PrintValue(Adafruit_SSD1306* display, int row, String title, std::string value) {
+  ClearRow(display, row);
+  display->setCursor(0, 8 * row);
+  display->printf("%s: %s", title.c_str(), value.c_str());
+  display->display();
+}
+
+void PrintValue(Adafruit_SSD1306* display, int row, int col, String title, float value, bool clr) {
+  if (clr) ClearRow(display, row);
+  display->setCursor(col, 8 * row);
+  display->printf("%s: %.1f", title.c_str(), value);
   display->display();
 }

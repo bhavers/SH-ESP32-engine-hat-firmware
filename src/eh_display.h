@@ -15,5 +15,6 @@ void ClearRow(Adafruit_SSD1306* display, int row);
 
 void PrintValue(Adafruit_SSD1306* display, int row, String title, float value);
 void PrintValue(Adafruit_SSD1306* display, int row, String title, String value);
+void PrintValue(Adafruit_SSD1306* display, int row, int col, String title, float value, bool clr);
 
 #endif

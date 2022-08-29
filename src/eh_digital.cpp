@@ -9,7 +9,10 @@ using namespace sensesp;
 
 // Default RPM count scale factor (corresponds to Yanmar 3GM30F RPM sender
 // output)
-const float kDefaultFrequencyScale = 1. / 97;
+//const float kDefaultFrequencyScale = 1. / 97;
+
+// Multiplier for Volvo Penta MD2020 is 0.0545, so 1 / 18.35
+const float kDefaultFrequencyScale = 1. / 18.35;
 
 
 FloatProducer* ConnectTachoSender(int pin, String name) {
