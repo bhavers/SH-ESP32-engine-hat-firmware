@@ -1,8 +1,8 @@
-# SH-ESP32 Engine Hat for Volvo MD2020
+# Engine Monitor based on SH-ESP32 with Engine Hat, SensESP and SignalK
 
-This repository provides software for the [SH-ESP32 Engine Top Hat add-on board](https://hatlabs.fi/product/sh-esp32-engine-top-hat-kit/) to monitor engine and environmental data. It is based on the example code/firmware of the SH-ESP32 Engine Hat (based on SensESP, see [Getting Started](https://signalk.org/SensESP/pages/getting_started/) instructions).
+This repository provides software for the [SH-ESP32 Engine Top Hat add-on board](https://hatlabs.fi/product/sh-esp32-engine-top-hat-kit/) to monitor engine and environmental data. It is based on the [example code/firmware of the SH-ESP32 Engine Hat](https://github.com/hatlabs/SH-ESP32-engine-hat-firmware). Which is based on SensESP, see [Getting Started](https://signalk.org/SensESP/pages/getting_started/) instructions). The device sends it data to [signalk-server](https://github.com/SignalK/signalk-server), which makes it available through [signalk-to-nmea2000](https://github.com/SignalK/signalk-to-nmea2000) plugin on the NMEA2000 / STNG bus.
 
-This is what it looks like, it is connected to a Volvo Penta MD2020 engine:
+I have the solution connected to a Volvo Penta MD2020 engine, this is what it looks like:
 ![Solution based on SH-ESP32 and Engine Hat](SH-ESP32-engine-hat.png)
 
 
@@ -31,15 +31,15 @@ Table below shows the connected sensors.
 | Internal BME280 | Temperature                                     | I2C       | N/A    | environment.inside.enginehat                 |               |
 | Internal BME280 | Atmospheric Pressure                            | I2C       | N/A    | environment.outside.pressure                 | 130314        |
 | Internal BME280 | Relative Humidity                               | I2C       | N/A    | environment.outside.relativeHumidity         | 130313        |
-
-Explanation with this table:
+ 
+Explanation of this table:
 * Connector: the connectors on the front from right to left
 * Sensor: the connected sensor
 * PIN: the pin (of other interface) where the sensor is connected to the SH-ESP32 or Engine Hat add-on board
 * Jumper: if the jumper on the Engine Hat is enabled or not
 * Signalk-path: the path where the sensor will be reporting into
 * NMEA2000 PGN: the NMEA2000 PGN that is supported on Raymarine devices (should be mapped by signak-to-nmea2000 plugin)
-
-Credits and thanks to [Hat Labs](https://github.com/hatlabs) and [SignalK](https://signalk.org/) community for such providing high quality hardware, software and support.
+ 
+Credits and thanks to [Hat Labs](https://github.com/hatlabs) and [SignalK](https://signalk.org/) community for providing such high quality hardware, software and support.
 
 
