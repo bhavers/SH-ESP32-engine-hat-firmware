@@ -67,16 +67,15 @@ const uint sensor_read_interval = 1000; // the delay / interval to read the sens
 
 // Definitions: Engine RPM (W-terminal on alternator)
 const char* config_engine1_freq_multiplier = "/engine1/tach/frequency multiplier"; // the alternator report a frequency that needs to be multiplied/divided to represent the actual RPM.
-const char* config_engine2_multiplier = "/engine2/tach/frequency multiplier"; // define a virtual second engine to define alternative parameters, see moving avg 2.
+const char* config_engine2_freq_multiplier = "/engine2/tach/frequency multiplier"; // define a virtual second engine to define alternative parameters, see moving avg 2.
 const char* config_engine1_moving_avg = "/engine1/tach/moving avg samples"; // the rpm might 'jump' around, use this number of samples to calculate a smooth rpm.
 const char* config_engine2_moving_avg = "/engine2/tach/moving avg samples"; // the first moving_avg might be slow, configure a faster (but more jumpy moving avg on a virtual second engine).
 const char* config_engine1_revolutions_sk_path = "/engine1/tach/revolutions/sk_path";
 const char* config_engine2_revolutions_sk_path = "/engine2/tach/revolutions/sk_path";
-auto metadata_engine1_tach_revolutions = new SKMetadata("Hz", "Revolutions", "Revolutions per second", "Revolutions", 3);
+auto metadata_engine_tach_revolutions = new SKMetadata("Hz", "Revolutions", "Revolutions per second", "Revolutions", 3);
 const char* value_engine1_tach_revolutions_sk_path = "propulsion.1.revolutions";
 const char* value_engine2_tach_revolutions_sk_path = "propulsion.2.revolutions";
-const float value_engine1_freq_multiplier = 1. / 9.5238; // 2022-08-26: Multiplier for Volvo Penta MD2020 is 0.105, so 1/ 9.5238
-const float value_engine2_freq_multiplier = 1. / 9.5238; 
+const float value_engine_freq_multiplier = 1. / 9.5238; // 2022-08-26: Multiplier for Volvo Penta MD2020 is 0.105, so 1/ 9.5238
 const float value_engine1_moving_avg = 15;
 const float value_engine2_moving_avg = 2;
 
@@ -220,9 +219,10 @@ void setup() {
   
   // Engine Temperature Sender 
   //auto analog_1_input = ConnectTempSender(ads1115, 0, "1");  // de "1" is de eerste motor (wordt in sk-path ingevoegd, proposulsion.1.etc)
-   // TODO: in het orgineel wordt enginehat_pin_temp meegegeven: auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115, enginehat_pin_temp]()
-   // Maar dat werkt niet. Volgens de doc hoef je helemaal niks mee te geven. Het is een callback function, maar tussen {} staat al de callback.
-   auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115]() {
+  // TODO: Simply this code, removing variables and using connect_to()
+  // TODO: in het orgineel wordt enginehat_pin_temp meegegeven: auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115, enginehat_pin_temp]()
+  // Maar dat werkt niet. Volgens de doc hoef je helemaal niks mee te geven. Het is een callback function, maar tussen {} staat al de callback.
+  auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115]() {
         int16_t adc_output = ads1115->readADC_SingleEnded(enginehat_pin_temp);
         float adc_output_volts = ads1115->computeVolts(adc_output);
         return kAnalogInputScale * adc_output_volts / kMeasurementCurrent;
@@ -265,11 +265,15 @@ void setup() {
   // Engine Tacho (RPM) Sender (W-terminal on alternator)
   auto engine1_tacho_sender = new DigitalInputCounter(kDigitalInputPin2, INPUT, RISING, 500, "");
   engine1_tacho_sender
-    ->connect_to(new Frequency(value_engine1_freq_multiplier, config_engine1_freq_multiplier))
+    ->connect_to(new Frequency(value_engine_freq_multiplier, config_engine1_freq_multiplier))
     ->connect_to(new MovingAverage(value_engine1_moving_avg, 1.0, config_engine1_moving_avg))
-    ->connect_to(new SKOutputFloat(value_engine1_tach_revolutions_sk_path, config_engine1_revolutions_sk_path,metadata_engine1_tach_revolutions));
+    ->connect_to(new SKOutputFloat(value_engine1_tach_revolutions_sk_path, config_engine1_revolutions_sk_path,metadata_engine_tach_revolutions));
 
- 
+   engine1_tacho_sender
+    ->connect_to(new Frequency(value_engine_freq_multiplier, config_engine2_freq_multiplier))
+    ->connect_to(new MovingAverage(value_engine2_moving_avg, 1.0, config_engine2_moving_avg))
+    ->connect_to(new SKOutputFloat(value_engine2_tach_revolutions_sk_path, config_engine2_revolutions_sk_path,metadata_engine_tach_revolutions));
+
   
   // auto alarm_3_input = ConnectAlarmSender(kDigitalInputPin3, "1"); // Oil pressure relay / alarm
   auto digital_4_input = ConnectAlarmSender(kDigitalInputPin4, "1"); // Temperature relay / alarm
