@@ -10,7 +10,7 @@ I have the solution connected to a Volvo Penta MD2020 engine, this is what it lo
 Table below shows the connected sensors.
 
 
-| Connector       | Sensor                                          | Pin       | jumper | Signalk path                                 | NMEA2000 PGN  |
+| Connector       | Sensor                                          | Pin       | Jumper | Signalk path                                 | NMEA2000 PGN  |
 | --------------- | ----------------------------------------------- | --------- | ------ | -------------------------------------------- | ------------- |
 | Power           | 12V Power + | 12V+      | N/A    | N/A                                          |               |
 | Power           | Ground         | GND       | N/A    | N/A                                          |               |
@@ -18,20 +18,20 @@ Table below shows the connected sensors.
 | 1-wire #1       | Temp oil carter                                 | 1-wire #1 | N/A    | propulsion.1.oilTemperature                  | 127489        |
 | 1-wire #1       | Temp engine room                                | 1-wire #1 | N/A    | environment.inside.engineRoom.temperature    |               |
 | 1-wire #1       | Temp cabin                                      | 1-wire #1 | N/A    | environment.outside.temperature              | 130310        |
-| EngineHat1      | Cooling water engine sender                                  | A1        | ja     | propulsion.1.temperature                     | 127489        |
-| EngineHat1      | Cooling water engine alarm                                  | D1        | nee    | notifications.propulsion.1.overTemperature                                             |               |
-| EngineHat1      | Oil pressure engine sender                                   | A2        | ja     | propulsion.1.oilPressure                     | 127489        |
-| EngineHat1      | Oil pressure engine alarm                                   | D2        | nee    | notifications.propulsion.1.lowOilPressure                                             |               |
+| EngineHat1      | Cooling water engine sender                                  | A1        | yes     | propulsion.1.temperature                     | 127489        |
+| EngineHat1      | Cooling water engine alarm                                  | D1        | no    | notifications.propulsion.1.overTemperature                                             |               |
+| EngineHat1      | Oil pressure engine sender                                   | A2        | yes     | propulsion.1.oilPressure                     | 127489        |
+| EngineHat1      | Oil pressure engine alarm                                   | D3        | yes    | notifications.propulsion.1.lowOilPressure                                             |               |
 | EngineHat2      | Fuel tank sender                               | A3        | nee    | tanks.fuel.1.currentLevel en currentVolume   |               |
-| EngineHat2      | RPM (W-terminal alternator)                                | D3        | ja     | propulsion.1.revolutions                     | 127489,127488 |
+| EngineHat2      | RPM (W-terminal alternator)                                | D2        | no     | propulsion.1.revolutions                     | 127489,127488 |
 | EngineHat2      | NOT USED                                        | A4        | -      |                                              |               |
 | EngineHat2      | NOT USED                                        | D4        | -      |                                              |               |
 | 1-Wire #2       | Future: fridge                                  | 1-wire #2 | N/A    | environment.inside.refridgerator.temperature | 130312        |
 | 1-wire #2       | Future: starter battery                         | 1-wire #2 | N/A    |                                              | 127508        |
-| Internal BME280 | Temperature                                     | I2C       | N/A    | environment.inside.enginehat                 |               |
+| Internal BME280 | Temperature                                     | I2C       | N/A    | environment.inside.enginehat.temperature                 |               |
 | Internal BME280 | Atmospheric Pressure                            | I2C       | N/A    | environment.outside.pressure                 | 130314        |
 | Internal BME280 | Relative Humidity                               | I2C       | N/A    | environment.outside.relativeHumidity         | 130313        |
- 
+
 Explanation of this table:
 * Connector: the connectors on the front from right to left
 * Sensor: the connected sensor
