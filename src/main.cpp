@@ -4,11 +4,6 @@
 #include <Adafruit_ADS1X15.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
-//#include <iostream>
-//#include <cstring>
-
-
 #include "eh_display.h"
 #include "sensesp/transforms/lambda_transform.h"
 #include "sensesp/sensors/analog_input.h"
@@ -19,7 +14,6 @@
 #include "sensesp/transforms/linear.h"
 #include "sensesp/transforms/frequency.h"
 #include "sensesp/transforms/moving_average.h"
-#include "sensesp/transforms/truth_text.h"
 #include "sensesp/system/lambda_consumer.h"
 #include "sensesp_app_builder.h"
 #include "sensesp_onewire/onewire_temperature.h"
@@ -44,10 +38,6 @@ const int kDigitalInputPin2 = GPIO_NUM_13; // Engine hat digital input pin
 const int kDigitalInputPin3 = GPIO_NUM_14; // Engine hat digital input pin
 const int kDigitalInputPin4 = GPIO_NUM_12; // Engine hat digital input pin
 
-const float kAnalogInputScale = 29. / 2.048; // ADS1115 input hardware scale factor (input voltage vs voltage at ADS1115)
-const float kMeasurementCurrent = 0.01; // Engine Hat constant measurement current (A)
-const uint ads_read_delay = 500;  // ms
-
 // Test output pin configuration
 #define ENABLE_TEST_OUTPUT_PIN
 #ifdef ENABLE_TEST_OUTPUT_PIN
@@ -57,7 +47,9 @@ const int kTestOutputInterval = 5;
 #endif
 
 // Global definitions
-const uint sensor_read_interval = 1000; // the delay / interval to read the sensors, used for all sensors in this program
+const float kAnalogInputScale = 29. / 2.048; // ADS1115 input hardware scale factor (input voltage vs voltage at ADS1115)
+const float kMeasurementCurrent = 0.01; // Engine Hat constant measurement current (A)
+const uint sensor_read_interval = 1000; // ms, the delay / interval to read the sensors, used for all sensors in this program
 
 
 // Specific defintions per sensor
@@ -114,7 +106,15 @@ const char* config_engine1_temp_alarm_sk_path = "/engine1/temp/alarm/sk_path";
 const char* value_engine1_temp_alarm_sk_path = "notifications.propulsion.1.overTemperature";
 
 // Definition: Engine oil pressure sender
-
+// Definition: Engine temperature sender
+uint8_t enginehat_pin_oil = 1; // attached to pin B on the Engine Hat.
+const char* config_engine1_oil_resistance_sk_path = "/engine1/oil/resistance/sk_path"; // the sk_path of the resistance of the temp sender in the engine.
+const char* config_engine1_oil_pressure_sk_path = "/engine1/oil/pressure/sk_path"; // the sk_path of the temperature of the temp sender in the engine.
+const char* config_engine1_oil_level_curve = "/engine1/oil/Level Curve";
+const char* value_engine1_oil_resistance_sk_path = "propulsion.1.oil.senderResistance";
+const char* value_engine1_oil_pressure_sk_path = "propulsion.1.oilpressure";
+auto metadata_engine1_oil_resistance = new SKMetadata("ohm", "Resistance", "Measured resistance of oil sender", "Resistance", 10);
+auto metadata_engine1_oil_pressure = new SKMetadata("Pa", "Engine Oil Pressure", "Oil pressure in engine", "Pressure", 10);
 
 // Definition: Engine oil pressure alarm (relay)
 const char* config_engine1_oil_alarm_sk_path = "/engine1/oil/alarm/sk_path";
@@ -141,8 +141,6 @@ auto metadata_tank1_remaining = new SKMetadata("m3", "Remaining volume", "Remain
 auto metadata_tank1_level = new SKMetadata("ratio", "Current level", "Current level of fuel in tank (%)", "Level", 10);
 
 // Definition: BME280 sensors (temperature, barometric pressure, relative humidy)
-
-
 Adafruit_BME280 bme280;
 TwoWire* i2c;
 Adafruit_SSD1306* display;
@@ -150,7 +148,6 @@ reactesp::ReactESP app;
 
 bool alarm_states[4] = {false, false, false, false}; // Store alarm states in an array for local display output
 
-  
 #ifdef ENABLE_TEST_OUTPUT_PIN
 void ToggleTestOutputPin(void * parameter) {
   while (true) {
@@ -213,11 +210,6 @@ void setup() {
   bool ads_initialized = ads1115->begin(kADS1115Address, i2c);
   debugD("ADS1115 initialized: %d", ads_initialized);
 
-  #ifdef ENABLE_TEST_OUTPUT_PIN
-    pinMode(kTestOutputPin, OUTPUT);
-    xTaskCreate(ToggleTestOutputPin, "toggler", 2048, NULL, 1, NULL);
-  #endif
-
   // Construct the global SensESPApp() object
   SensESPAppBuilder builder;
   sensesp_app = (&builder)
@@ -243,7 +235,7 @@ void setup() {
   // TODO: in het orgineel wordt enginehat_pin_temp meegegeven: auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115, enginehat_pin_temp]()
   // Maar dat werkt niet. Volgens de doc hoef je helemaal niks mee te geven. Het is een callback function, maar tussen {} staat al de callback.
   
-  auto engine1_temp_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115]() {
+  auto engine1_temp_sender_resistance = new RepeatSensor<float>(sensor_read_interval, [ads1115]() {
         int16_t adc_output = ads1115->readADC_SingleEnded(enginehat_pin_temp);
         float adc_output_volts = ads1115->computeVolts(adc_output);
         return kAnalogInputScale * adc_output_volts / kMeasurementCurrent;
@@ -274,11 +266,29 @@ void setup() {
   engine1_temp_sender_resistance->connect_to(temp_curve)->connect_to(new SKOutputFloat(value_engine1_temp_temperature_sk_path, config_engine1_temp_temperature_sk_path, metadata_engine1_temp_temperature));
 
   // ===== Engine Oil Pressure Sender =====
-   //auto oilpressure_b_volume = ConnectTankSender(ads1115, 1, "B"); //20220827 placeholder toegevoegd i
+  // 10 - 184 ohm = 0 tot 10 bar
+  auto engine1_oil_sender_resistance = new RepeatSensor<float>(sensor_read_interval, [ads1115]() {
+        int16_t adc_output = ads1115->readADC_SingleEnded(enginehat_pin_oil);
+        float adc_output_volts = ads1115->computeVolts(adc_output);
+        return kAnalogInputScale * adc_output_volts / kMeasurementCurrent;
+      });
+  //auto engine1_temp_sender_resistance_sk_output = new SKOutputFloat(value_engine1_temp_resistance_sk_path, config_engine1_temp_temperature_sk_path, metadata_engine1_temp_resistance);
+  auto oil_curve = (new CurveInterpolator(nullptr, config_engine1_oil_level_curve))
+                        ->set_input_title("Sender Resistance (ohms)")
+                        ->set_output_title("Oil Pressure Curve (ratio)");
+  if (oil_curve->get_samples().empty()) {
+    // If there's no prior configuration, provide a default curve
+    oil_curve->clear_samples();
+    oil_curve->add_sample(CurveInterpolator::Sample(0, 0)); 
+    oil_curve->add_sample(CurveInterpolator::Sample(10, 0)); // min, is 0 bar.
+    oil_curve->add_sample(CurveInterpolator::Sample(184, 1000000)); // max, is 10 bar? is 1.000.000 Pa
+    oil_curve->add_sample(CurveInterpolator::Sample(300, 1000000)); 
+  }
+  engine1_oil_sender_resistance->connect_to(new SKOutputFloat(value_engine1_oil_resistance_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_resistance));
+  engine1_oil_sender_resistance->connect_to(temp_curve)->connect_to(new SKOutputFloat(value_engine1_oil_pressure_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_pressure));
 
   // ===== Fuel Tank Sender =====
-  
-  auto tank_fuel1_sender_resistance = new RepeatSensor<float>(ads_read_delay, [ads1115]() {
+  auto tank_fuel1_sender_resistance = new RepeatSensor<float>(sensor_read_interval, [ads1115]() {
       int16_t adc_output = ads1115->readADC_SingleEnded(enginehat_pin_fuel);
       float adc_output_volts = ads1115->computeVolts(adc_output);
       return kAnalogInputScale * adc_output_volts / kMeasurementCurrent;
