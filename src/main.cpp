@@ -8,9 +8,9 @@
 //#include <iostream>
 //#include <cstring>
 
-#include "eh_analog.h"
-#include "eh_digital.h"
+
 #include "eh_display.h"
+#include "sensesp/transforms/lambda_transform.h"
 #include "sensesp/sensors/analog_input.h"
 #include "sensesp/sensors/digital_input.h"
 #include "sensesp/sensors/sensor.h"
@@ -25,7 +25,6 @@
 #include "sensesp_onewire/onewire_temperature.h"
 #include <Adafruit_BME280.h>
 #include <Wire.h>
-#include <ArduinoJson.h> 
 
 using namespace sensesp;
 using namespace std;
@@ -308,73 +307,13 @@ void setup() {
       ->connect_to(tank_fuel1_volume)
       ->connect_to(new MovingAverage(value_tank1_moving_avg, 1.0, config_tank1_moving_avg))
       ->connect_to(new SKOutputFloat(value_tank1_remaining_sk_path, config_tank1_remaining_sk_path, metadata_tank1_remaining));
-
   // ===== DIGITAL SENDERS =====
 
   // ===== Engine Temperature Alarm/Relay =====
   auto* alarm_input = new DigitalInputChange(kDigitalInputPin1, INPUT, CHANGE);
-
-  auto json_function = [](int input) -> JsonObject {  
-     DynamicJsonDocument doc(1024);
-     String msg = "";
-     if (input == 1) {
-       msg = "{\"method\": [\"sound\"],\"state\": \"alarm\",\"message\": \"Engine overheating!\"}";
-       deserializeJson(doc, msg); 
-       JsonObject obj = doc.as<JsonObject>();
-       return obj;
-     }
-     else { // input == 0
-       msg = "{\"method\": [\"visual\"],\"state\": \"normal\",\"message\": \"Nothing to worry about\"}";
-       deserializeJson(doc, msg); 
-       JsonObject obj = doc.as<JsonObject>();
-       return obj;
-       //return "LOW it is";
-     }
-  };
-  alarm_input
-     ->connect_to(new LambdaTransform<int, JsonObject>(json_function))
-     ->connect_to(new SKOutput<JsonObject>("notifications.propulsion.1.overTemperature"));
-
-
-/*  
-  auto sendSK = new SKOutput<JsonObject>(value_engine1_temp_alarm_sk_path);
-  DynamicJsonDocument doc(1024);
-  String msg = "{\"method\": [\"sound\"],\"state\": \"alarm\",\"message\": \"Engine overheating!\"}";
-  deserializeJson(doc, msg); 
-  JsonObject obj = doc.as<JsonObject>();
-  sendSK->connec(obj);
-  alarm_input
-     ->connect_to(sendSK);
-*/
-
-
-  //alarm_input->connect_to(new SKOutputBool(value_engine1_temp_alarm_sk_path, config_engine1_temp_alarm_sk_path));
-  //alarm_input->connect_to(new LambdaConsumer<float>(
-  //    [](float input) { debugD("Heading: %f", input); }));
-
-  //alarm_input
-  //    ->connect_to(new TruthToText("alarm", "normal"))
-   //   ->connect_to(new SKOutputString("notifications.propulsion.1.overTemperature.value.state"));
-
-      //->connect_to(new SKOutputString(value_engine1_temp_alarm_sk_path, config_engine1_temp_alarm_sk_path)); // dit is originele regel, na test weer toevoegen.
- 
-
-
-
-
-
-// notifications.propulsion.1.overTemperature
-// ->connect_to(new TruthToText("method:[sound],state:alarm,message:Engine overheating!", "normal"))
-// ->connect_to(new TruthToText("{\"method\": [\"sound\"],\"state\": \"alarm\",\"message\": \"Engine overheating!\"}", "normal"))
- /* alarm_input
-      ->connect_to(new TruthToText("sound",""))
-      ->connect_to(new SKOutputString("notifications.propulsion.1.overTemperature.method"));
-  alarm_input
-      ->connect_to(new TruthToText("Engine overheating!",""))
-      ->connect_to(new SKOutputString("notifications.propulsion.1.overTemperature.message"));
-*/
-  //alarm_input->connect_to(new SKOutputString(value_engine1_temp_alarm_sk_path, config_engine1_temp_alarm_sk_path));
-  // TODO: zie oil pressure alarm.
+  alarm_input->connect_to(new SKOutputBool(value_engine1_temp_temperature_sk_path, config_engine1_temp_temperature_sk_path));
+  // TODO: set output to "normal" or "alarm", instead of 1 or 0.
+  // See main_with_alarm_test.cpp for failed tests. 
 
   // ===== Engine Tacho (RPM) Sender (W-terminal on alternator) =====
   auto engine1_tacho_sender = new DigitalInputCounter(kDigitalInputPin2, INPUT, RISING, 500, "");
@@ -391,30 +330,6 @@ void setup() {
   // ===== Engine Oil Pressure Alarm/Relay =====
   auto* alarm_input2 = new DigitalInputChange(kDigitalInputPin3, INPUT, CHANGE);
   alarm_input2->connect_to(new SKOutputBool(value_engine1_oil_alarm_sk_path, config_engine1_oil_alarm_sk_path));
-
-  // TODO: set output to "normal" or "alarm", instead of 1 or 0.
-  // this now sets the value to 0 or 1 but singalk spec (actually sbender on slack) says it is an Enum which can be normal, alarm, alert, emergency, etc.
-  // an alarm is triggered by logic that would set the bit to 1 (in the N2K PGN) if state !== “normal”
-  // so with this relay set it to "normal" and "alarm". 
-  // explanation lambda functions in c++: https://docs.microsoft.com/en-us/cpp/cpp/lambda-expressions-in-cpp?view=msvc-170
-  // sensesp docs LambdaConsumer: https://signalk.org/SensESP/pages/internals/
-  // signalk notification specs: https://signalk.org/specification/1.7.0/doc/notifications.html
-  // example spec: "value": {
-  //          "message": "MOB",
-  //          "state": "emergency",
-  //          "method": ["visual", "sound"]
-
-
-  // TODO: dit hieronder kan weg als vraag boven beantwoord is.
-  //auto digital_4_input = ConnectAlarmSender(kDigitalInputPin4, "1"); // Temperature relay / alarm
-  // Update the alarm states based on the input value changes
-  //digital_4_input->connect_to(new LambdaConsumer<bool>([](bool value) { alarm_states[1] = value; }));
-
-  // alarm_3_input->connect_to(
-  //     new LambdaConsumer<bool>([](bool value) { alarm_states[2] = value; }));
-  // alarm_4_input->connect_to(
-  //     new LambdaConsumer<bool>([](bool value) { alarm_states[3] = value; }));
-
 
 
   // ===== DISPLAY ======
@@ -441,18 +356,10 @@ void setup() {
      // Show 1-wire values
       onewire_1_temp->connect_to(new LambdaConsumer<float>(
           [](float temperature) {PrintValue(display, 5, "Temp 1:", TEMP_DISPLAY_FUNC(temperature));}));
-          //[](float temperature) {PrintValue(display, 5, 0, "-", TEMP_DISPLAY_FUNC(temperature), true);}));
-          //[strTemp](float temperature) mutable {return strTemp + std::to_string(TEMP_DISPLAY_FUNC(temperature));}));
       onewire_2_temp->connect_to(new LambdaConsumer<float>(
           [](float temperature) {PrintValue(display, 6, "Temp 2:", TEMP_DISPLAY_FUNC(temperature));}));
-          //[](float temperature) {PrintValue(display, 5, 25, " ", TEMP_DISPLAY_FUNC(temperature), false);}));
-          //[strTemp](float temperature) mutable {return strTemp + " / " + std::to_string(TEMP_DISPLAY_FUNC(temperature));}));
       onewire_3_temp->connect_to(new LambdaConsumer<float>(
-          [](float temperature) {PrintValue(display, 7, "Temp 3:", TEMP_DISPLAY_FUNC(temperature));}));
-          //[](float temperature) {PrintValue(display, 5, 50, " ", TEMP_DISPLAY_FUNC(temperature), false);}));
-          //[strTemp](float temperature) mutable {return strTemp + " / " + std::to_string(TEMP_DISPLAY_FUNC(temperature));}));
-      //PrintValue(display, 5, "1wire: ", strTemp); 
-      
+          [](float temperature) {PrintValue(display, 7, "Temp 3:", TEMP_DISPLAY_FUNC(temperature));}));      
   }
 
   // ===== BME280 ======
