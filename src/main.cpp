@@ -110,7 +110,7 @@ const char* value_engine1_temp_alarm_sk_path = "notifications.propulsion.1.overT
 uint8_t enginehat_pin_oil = 1; // attached to pin B on the Engine Hat.
 const char* config_engine1_oil_resistance_sk_path = "/engine1/oil/resistance/sk_path"; // the sk_path of the resistance of the temp sender in the engine.
 const char* config_engine1_oil_pressure_sk_path = "/engine1/oil/pressure/sk_path"; // the sk_path of the temperature of the temp sender in the engine.
-const char* config_engine1_oil_level_curve = "/engine1/oil/Level Curve";
+const char* config_engine1_oil_pressure_curve = "/engine1/oil/Level Pressure";
 const char* value_engine1_oil_resistance_sk_path = "propulsion.1.oil.senderResistance";
 const char* value_engine1_oil_pressure_sk_path = "propulsion.1.oilpressure";
 auto metadata_engine1_oil_resistance = new SKMetadata("ohm", "Resistance", "Measured resistance of oil sender", "Resistance", 10);
@@ -273,7 +273,7 @@ void setup() {
         return kAnalogInputScale * adc_output_volts / kMeasurementCurrent;
       });
   //auto engine1_temp_sender_resistance_sk_output = new SKOutputFloat(value_engine1_temp_resistance_sk_path, config_engine1_temp_temperature_sk_path, metadata_engine1_temp_resistance);
-  auto oil_curve = (new CurveInterpolator(nullptr, config_engine1_oil_level_curve))
+  auto oil_curve = (new CurveInterpolator(nullptr, config_engine1_oil_pressure_curve))
                         ->set_input_title("Sender Resistance (ohms)")
                         ->set_output_title("Oil Pressure Curve (ratio)");
   if (oil_curve->get_samples().empty()) {
@@ -285,7 +285,7 @@ void setup() {
     oil_curve->add_sample(CurveInterpolator::Sample(300, 1000000)); 
   }
   engine1_oil_sender_resistance->connect_to(new SKOutputFloat(value_engine1_oil_resistance_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_resistance));
-  engine1_oil_sender_resistance->connect_to(temp_curve)->connect_to(new SKOutputFloat(value_engine1_oil_pressure_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_pressure));
+  engine1_oil_sender_resistance->connect_to(oil_curve)->connect_to(new SKOutputFloat(value_engine1_oil_pressure_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_pressure));
 
   // ===== Fuel Tank Sender =====
   auto tank_fuel1_sender_resistance = new RepeatSensor<float>(sensor_read_interval, [ads1115]() {
@@ -307,7 +307,6 @@ void setup() {
   auto tank_fuel1_volume = new Linear(tank_fuel1_capacity, 0, config_tank1_capacity_sk_path);
   new SKOutputFloat(value_tank1_capacity_sk_path, config_tank1_capacity_sk_path, metadata_tank1_capacity);
 
-
   tank_fuel1_sender_resistance->connect_to(new SKOutputFloat(value_tank1_resistance_sk_path, config_tank1_resistance_sk_path, metadata_tank1_level_resistance));
   tank_fuel1_sender_resistance
       ->connect_to(fuel_curve)
@@ -321,9 +320,22 @@ void setup() {
 
   // ===== Engine Temperature Alarm/Relay =====
   auto* alarm_input = new DigitalInputChange(kDigitalInputPin1, INPUT, CHANGE);
-  alarm_input->connect_to(new SKOutputBool(value_engine1_temp_temperature_sk_path, config_engine1_temp_temperature_sk_path));
-  // TODO: set output to "normal" or "alarm", instead of 1 or 0.
-  // See main_with_alarm_test.cpp for failed tests. 
+  auto jsonify = new LambdaTransform<bool, String>([](bool input) -> String {
+    DynamicJsonDocument doc(1024);
+    if (input == true) {
+      JsonArray alarm_methods = doc.createNestedArray("method");
+      alarm_methods.add("visual");
+      alarm_methods.add("sound");
+      doc["state"] = "alarm";
+      doc["message"] = "Engine overheating";
+    } 
+    String output;
+    serializeJson(doc, output);
+    return output;
+  });
+  alarm_input->connect_to(jsonify);
+  jsonify->connect_to(new SKOutputRawJson(value_engine1_temp_alarm_sk_path, config_engine1_temp_alarm_sk_path));
+
 
   // ===== Engine Tacho (RPM) Sender (W-terminal on alternator) =====
   auto engine1_tacho_sender = new DigitalInputCounter(kDigitalInputPin2, INPUT, RISING, 500, "");
@@ -339,8 +351,21 @@ void setup() {
 
   // ===== Engine Oil Pressure Alarm/Relay =====
   auto* alarm_input2 = new DigitalInputChange(kDigitalInputPin3, INPUT, CHANGE);
-  alarm_input2->connect_to(new SKOutputBool(value_engine1_oil_alarm_sk_path, config_engine1_oil_alarm_sk_path));
-
+  auto jsonify2 = new LambdaTransform<bool, String>([](bool input) -> String {
+    DynamicJsonDocument doc(1024);
+    if (input == true) {
+      JsonArray alarm_methods = doc.createNestedArray("method");
+      alarm_methods.add("visual");
+      alarm_methods.add("sound");
+      doc["state"] = "alarm";
+      doc["message"] = "Oil pressure low";
+    } 
+    String output;
+    serializeJson(doc, output);
+    return output;
+  });
+  alarm_input2->connect_to(jsonify2);
+  jsonify2->connect_to(new SKOutputRawJson(value_engine1_oil_alarm_sk_path, config_engine1_oil_alarm_sk_path));
 
   // ===== DISPLAY ======
 
