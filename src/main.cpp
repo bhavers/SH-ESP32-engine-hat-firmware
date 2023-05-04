@@ -84,12 +84,12 @@ const char* config_onewire_3_address = "/oneWire/3/address";
 const char* config_onewire_1_sk_path = "/onewire/1/signalk path";
 const char* config_onewire_2_sk_path = "/oneWire/2/signalk path";
 const char* config_onewire_3_sk_path = "/oneWire/3/signalk path";
-auto onewire_1_metadata = new SKMetadata("K", "Engine Oil Temperature", "Engine Oil Temperature", "Oil Temperature", 10);
+auto onewire_3_metadata = new SKMetadata("K", "Engine Oil Temperature", "Engine Oil Temperature", "Oil Temperature", 10);
 auto onewire_2_metadata = new SKMetadata("K", "Engine Room Temperature", "Engine Room Temperature", "Engine Room Temperature", 10);
-auto onewire_3_metadata = new SKMetadata("K", "Cabin Room Temperature", "Cabin Room Temperature; also used for outside temperature", "Cabin Room Temperature", 10);
-const char* value_onewire_1_sk_path = "propulsion.1.oilTemperature";
+auto onewire_1_metadata = new SKMetadata("K", "Cabin Room Temperature", "Cabin Room Temperature; also used for outside temperature", "Cabin Room Temperature", 10);
+const char* value_onewire_3_sk_path = "propulsion.1.oilTemperature";
 const char* value_onewire_2_sk_path = "environment.inside.engineRoom.temperature";
-const char* value_onewire_3_sk_path = "environment.outside.temperature";
+const char* value_onewire_1_sk_path = "environment.outside.temperature";
 
 // Definition: Engine temperature sender
 uint8_t enginehat_pin_temp = 0; // attached to pin A on the Engine Hat.
@@ -112,7 +112,7 @@ const char* config_engine1_oil_resistance_sk_path = "/engine1/oil/resistance/sk_
 const char* config_engine1_oil_pressure_sk_path = "/engine1/oil/pressure/sk_path"; // the sk_path of the temperature of the temp sender in the engine.
 const char* config_engine1_oil_pressure_curve = "/engine1/oil/Level Pressure";
 const char* value_engine1_oil_resistance_sk_path = "propulsion.1.oil.senderResistance";
-const char* value_engine1_oil_pressure_sk_path = "propulsion.1.oilpressure";
+const char* value_engine1_oil_pressure_sk_path = "propulsion.1.oilPressure";
 auto metadata_engine1_oil_resistance = new SKMetadata("ohm", "Resistance", "Measured resistance of oil sender", "Resistance", 10);
 auto metadata_engine1_oil_pressure = new SKMetadata("Pa", "Engine Oil Pressure", "Oil pressure in engine", "Pressure", 10);
 
@@ -262,7 +262,7 @@ void setup() {
     temp_curve->add_sample(CurveInterpolator::Sample(0, 393.15));  // 120C - added, not measured, also not in spec, just guessed
   }
 
-  engine1_temp_sender_resistance->connect_to(new SKOutputFloat(value_engine1_temp_resistance_sk_path, config_engine1_temp_temperature_sk_path, metadata_engine1_temp_resistance));
+  engine1_temp_sender_resistance->connect_to(new SKOutputFloat(value_engine1_temp_resistance_sk_path, config_engine1_temp_resistance_sk_path, metadata_engine1_temp_resistance));
   engine1_temp_sender_resistance->connect_to(temp_curve)->connect_to(new SKOutputFloat(value_engine1_temp_temperature_sk_path, config_engine1_temp_temperature_sk_path, metadata_engine1_temp_temperature));
 
   // ===== Engine Oil Pressure Sender =====
@@ -280,11 +280,11 @@ void setup() {
     // If there's no prior configuration, provide a default curve
     oil_curve->clear_samples();
     oil_curve->add_sample(CurveInterpolator::Sample(0, 0)); 
-    oil_curve->add_sample(CurveInterpolator::Sample(10, 0)); // min, is 0 bar.
-    oil_curve->add_sample(CurveInterpolator::Sample(184, 1000000)); // max, is 10 bar? is 1.000.000 Pa
+    oil_curve->add_sample(CurveInterpolator::Sample(10, 0)); // KUS oliedrukmete is 10-184 ohm, wat staat voor 0 - 10 bar.
+    oil_curve->add_sample(CurveInterpolator::Sample(184, 1000000)); // 100 kPa = 1 bar, 1000kPa = 10 bar. 
     oil_curve->add_sample(CurveInterpolator::Sample(300, 1000000)); 
   }
-  engine1_oil_sender_resistance->connect_to(new SKOutputFloat(value_engine1_oil_resistance_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_resistance));
+  engine1_oil_sender_resistance->connect_to(new SKOutputFloat(value_engine1_oil_resistance_sk_path, config_engine1_oil_resistance_sk_path, metadata_engine1_oil_resistance));
   engine1_oil_sender_resistance->connect_to(oil_curve)->connect_to(new SKOutputFloat(value_engine1_oil_pressure_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_pressure));
 
   // ===== Fuel Tank Sender =====
