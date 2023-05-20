@@ -300,9 +300,10 @@ void setup() {
   if (fuel_curve->get_samples().empty()) {
     // If there's no prior configuration, provide a default curve
     fuel_curve->clear_samples();
-    fuel_curve->add_sample(CurveInterpolator::Sample(0, 0)); // Empty
-    fuel_curve->add_sample(CurveInterpolator::Sample(180., 1));  // Full
-    fuel_curve->add_sample(CurveInterpolator::Sample(300., 1));  // Range of my pot meter for tests.
+    fuel_curve->add_sample(CurveInterpolator::Sample(0, 0)); // Empty (the range of similar VDO meter is 3 - 180 ohm)
+    fuel_curve->add_sample(CurveInterpolator::Sample(35., 0.45));
+    fuel_curve->add_sample(CurveInterpolator::Sample(400., 0.6));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
+    fuel_curve->add_sample(CurveInterpolator::Sample(500., 1));  // Range of my pot meter for tests.
   }
   auto tank_fuel1_volume = new Linear(tank_fuel1_capacity, 0, config_tank1_capacity_sk_path);
   new SKOutputFloat(value_tank1_capacity_sk_path, config_tank1_capacity_sk_path, metadata_tank1_capacity);
@@ -359,7 +360,9 @@ void setup() {
       alarm_methods.add("sound");
       doc["state"] = "alarm";
       doc["message"] = "Oil pressure low";
-    } 
+    } else {
+      doc["value"]; // should this be ""? null is not accepted.
+    }
     String output;
     serializeJson(doc, output);
     return output;
@@ -414,8 +417,8 @@ void setup() {
   // Create a RepeatSensor with float output that reads the temperature
   // using the function defined above.
   auto* bme280_temp = new RepeatSensor<float>(5000, read_temp_callback);
-  auto* bme280_pressure = new RepeatSensor<float>(60000, read_pressure_callback);
-  auto* bme280_humidity =  new RepeatSensor<float>(60000, read_humidity_callback);     
+  auto* bme280_pressure = new RepeatSensor<float>(10000, read_pressure_callback);
+  auto* bme280_humidity =  new RepeatSensor<float>(10000, read_humidity_callback);     
   // Send the temperature to the Signal K server as a Float
   bme280_temp->connect_to(new SKOutputFloat("environment.inside.enginehat.temperature"));
   bme280_pressure->connect_to(new SKOutputFloat("environment.outside.pressure"));
