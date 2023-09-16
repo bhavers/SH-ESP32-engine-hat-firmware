@@ -305,17 +305,31 @@ void setup() {
     fuel_curve->add_sample(CurveInterpolator::Sample(400., 0.6));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
     fuel_curve->add_sample(CurveInterpolator::Sample(500., 1));  // Range of my pot meter for tests.
   }
+  // 2023-09-16: 370 ohm = 80% full, change manual configured from x -> y:
+  // 350=0.45 -> 0.75
+  // 400=0.6 -> 0.85
+
   auto tank_fuel1_volume = new Linear(tank_fuel1_capacity, 0, config_tank1_capacity_sk_path);
   new SKOutputFloat(value_tank1_capacity_sk_path, config_tank1_capacity_sk_path, metadata_tank1_capacity);
 
-  tank_fuel1_sender_resistance->connect_to(new SKOutputFloat(value_tank1_resistance_sk_path, config_tank1_resistance_sk_path, metadata_tank1_level_resistance));
+  tank_fuel1_sender_resistance
+    ->connect_to(new SKOutputFloat(value_tank1_resistance_sk_path, config_tank1_resistance_sk_path, metadata_tank1_level_resistance));
+
+// tank_fuel1_sender_resistance
+//       ->connect_to(fuel_curve)
+//       ->connect_to(new MovingAverage(value_tank1_moving_avg, 1.0, config_tank1_moving_avg))
+//       ->connect_to(new SKOutputFloat(value_tank1_level_sk_path, config_tank1_level_sk_path, metadata_tank1_level));
+//   fuel_curve
+//       ->connect_to(tank_fuel1_volume)
+//       ->connect_to(new MovingAverage(value_tank1_moving_avg, 1.0, config_tank1_moving_avg))
+//       ->connect_to(new SKOutputFloat(value_tank1_remaining_sk_path, config_tank1_remaining_sk_path, metadata_tank1_remaining));
+  
+
   tank_fuel1_sender_resistance
       ->connect_to(fuel_curve)
-      ->connect_to(new MovingAverage(value_tank1_moving_avg, 1.0, config_tank1_moving_avg))
       ->connect_to(new SKOutputFloat(value_tank1_level_sk_path, config_tank1_level_sk_path, metadata_tank1_level));
   fuel_curve
       ->connect_to(tank_fuel1_volume)
-      ->connect_to(new MovingAverage(value_tank1_moving_avg, 1.0, config_tank1_moving_avg))
       ->connect_to(new SKOutputFloat(value_tank1_remaining_sk_path, config_tank1_remaining_sk_path, metadata_tank1_remaining));
   // ===== DIGITAL SENDERS =====
 
