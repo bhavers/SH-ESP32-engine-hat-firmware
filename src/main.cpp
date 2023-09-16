@@ -281,8 +281,8 @@ void setup() {
     oil_curve->clear_samples();
     oil_curve->add_sample(CurveInterpolator::Sample(0, 0)); 
     oil_curve->add_sample(CurveInterpolator::Sample(10, 0)); // KUS oliedrukmete is 10-184 ohm, wat staat voor 0 - 10 bar.
-    oil_curve->add_sample(CurveInterpolator::Sample(184, 1000000)); // 100 kPa = 1 bar, 1000kPa = 10 bar. 
-    oil_curve->add_sample(CurveInterpolator::Sample(300, 1000000)); 
+    oil_curve->add_sample(CurveInterpolator::Sample(184, 100000000)); // 100 kPa = 1 bar, 1000kPa = 10 bar. 
+    oil_curve->add_sample(CurveInterpolator::Sample(300, 100000000)); // Added 2 0's, than it works with signalk-to-n2k plugin
   }
   engine1_oil_sender_resistance->connect_to(new SKOutputFloat(value_engine1_oil_resistance_sk_path, config_engine1_oil_resistance_sk_path, metadata_engine1_oil_resistance));
   engine1_oil_sender_resistance->connect_to(oil_curve)->connect_to(new SKOutputFloat(value_engine1_oil_pressure_sk_path, config_engine1_oil_pressure_sk_path, metadata_engine1_oil_pressure));
