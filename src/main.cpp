@@ -306,7 +306,7 @@ void setup() {
     fuel_curve->add_sample(CurveInterpolator::Sample(500., 1));  // Range of my pot meter for tests.
   }
   // 2023-09-16: 370 ohm = 80% full, change manual configured from x -> y:
-  // 350=0.45 -> 0.75
+  // 350=0.45 -> 0.70
   // 400=0.6 -> 0.85
 
   auto tank_fuel1_volume = new Linear(tank_fuel1_capacity, 0, config_tank1_capacity_sk_path);
