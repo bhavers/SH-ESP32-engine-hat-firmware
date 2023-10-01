@@ -301,10 +301,12 @@ void setup() {
     // If there's no prior configuration, provide a default curve
     fuel_curve->clear_samples();
     fuel_curve->add_sample(CurveInterpolator::Sample(0, 0)); // Empty (the range of similar VDO meter is 3 - 180 ohm)
-    fuel_curve->add_sample(CurveInterpolator::Sample(35., 0.45));
-    fuel_curve->add_sample(CurveInterpolator::Sample(400., 0.6));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
+    fuel_curve->add_sample(CurveInterpolator::Sample(35., 0.7));
+    fuel_curve->add_sample(CurveInterpolator::Sample(400., 1));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
     fuel_curve->add_sample(CurveInterpolator::Sample(500., 1));  // Range of my pot meter for tests.
   }
+  // 2023-10-01: 375 ohm na toevoegen 18 liter. Zit nu 90-95% vol.
+  // 400= 0.850000024 -> heb ik 1 van gemaakt, scherm staat nu op 90% (was 80%)
   // 2023-09-16: 370 ohm = 80% full, change manual configured from x -> y:
   // 350=0.45 -> 0.70
   // 400=0.6 -> 0.85
