@@ -137,7 +137,7 @@ const char* value_tank1_remaining_sk_path = "tanks.fuel.1.currentVolume";
 const char* value_tank1_level_sk_path = "tanks.fuel.1.currentLevel";
 auto metadata_tank1_level_resistance = new SKMetadata("ohm", "Resistance", "Measured resistance of fuel tank sender", "Resistance", 10);
 auto metadata_tank1_capacity = new SKMetadata("m3", "Total volume", "The total volume (capacity) of the fuel tank (m3)", "Capacity", 10);
-auto metadata_tank1_remaining = new SKMetadata("m3", "Remaining volume", "Remaining volume of vuel in tank (m3)", "Level", 10);
+auto metadata_tank1_remaining = new SKMetadata("m3", "Remaining volume", "Remaining volume of fuel in tank (m3)", "Level", 10);
 auto metadata_tank1_level = new SKMetadata("ratio", "Current level", "Current level of fuel in tank (%)", "Level", 10);
 
 // Definition: BME280 sensors (temperature, barometric pressure, relative humidy)
@@ -301,8 +301,8 @@ void setup() {
     // If there's no prior configuration, provide a default curve
     fuel_curve->clear_samples();
     fuel_curve->add_sample(CurveInterpolator::Sample(0, 0)); // Empty (the range of similar VDO meter is 3 - 180 ohm)
-    fuel_curve->add_sample(CurveInterpolator::Sample(35., 0.7));
-    fuel_curve->add_sample(CurveInterpolator::Sample(400., 1));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
+    fuel_curve->add_sample(CurveInterpolator::Sample(350., 0.6));
+    fuel_curve->add_sample(CurveInterpolator::Sample(400., 0.8));  // Full. (in practice i use 180 = 0.4 and 500 = 1, through manual config screen).
     fuel_curve->add_sample(CurveInterpolator::Sample(500., 1));  // Range of my pot meter for tests.
   }
   // 2023-10-01: 375 ohm na toevoegen 18 liter. Zit nu 90-95% vol.
